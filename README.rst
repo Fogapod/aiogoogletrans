@@ -1,15 +1,17 @@
-note
+aiogoogletrans
+==============
+
+Note
 ----
 
-This is a fork of `fork <https://github.com/chauffer/aiogoogletrans>`_
-I created this repository to use in `my project <https://github.com/Fogapod/KiwiBot>`_
+This is a fork of `fork <https://github.com/chauffer/aiogoogletrans>`_.
 
-Original description below
+I created this repository to use in `my project <https://github.com/Fogapod/KiwiBot>`_.
 
-aioaiogoogletrans
-=================
+Original description begins here
+--------------------------------
 
-aiogoogletrans is a `googletrans <https://github.com/ssut/py-googletrans>`_ fork with asyncio support.
+aiogoogletrans is a `googletrans <https://github.com/ssut/py-googletrans>`__ fork with asyncio support.
 
 Compatible with Python 3.6+
 
