@@ -9,7 +9,7 @@ def get_file(*paths):
     path = os.path.join(*paths)
     try:
         with open(path, 'rb') as f:
-            return f.read()
+            return f.read().decode('utf8')
     except IOError:
         pass
 

@@ -33,7 +33,7 @@ modules: requests and future.
 
 .. code:: bash
 
-    $ pip install aiogoogletrans
+    $ pip install git+https://github.com/Fogapod/aiogoogletrans
 
 Basic Usage
 -----------
