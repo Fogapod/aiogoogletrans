@@ -1,7 +1,15 @@
+note
+----
+
+This is a fork of `fork <https://github.com/chauffer/aiogoogletrans>`_
+I created this repository to use in `my project <https://github.com/Fogapod/KiwiBot>`_
+
+Original description below
+
 aioaiogoogletrans
 =================
 
-aiogoogletrans is a [googletrans](https://github.com/ssut/py-googletrans) fork with asyncio support.
+aiogoogletrans is a `googletrans <https://github.com/ssut/py-googletrans>`_ fork with asyncio support.
 
 Compatible with Python 3.6+
 
@@ -96,7 +104,6 @@ GoogleTrans as a command line application
                             (Default: en)
       -s SRC, --src SRC     The source language you want to translate. (Default:
                             auto)
-      -c, --detect
 
     $ translate "veritas lux mea" -s la -d en
     [veritas] veritas lux mea

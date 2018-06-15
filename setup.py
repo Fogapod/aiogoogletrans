@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 import os.path
 import re
 
@@ -10,7 +9,7 @@ def get_file(*paths):
     path = os.path.join(*paths)
     try:
         with open(path, 'rb') as f:
-            return f.read().decode('utf8')
+            return f.read()
     except IOError:
         pass
 

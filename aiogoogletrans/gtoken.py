@@ -12,7 +12,7 @@ from aiogoogletrans.constants import DEFAULT_USER_AGENT
 from aiogoogletrans.utils import rshift
 
 
-class TokenAcquirer(object):
+class TokenAcquirer:
     """Google Translate API token generator
 
     translate.google.com uses a token to authorize the requests. If you are
@@ -41,10 +41,8 @@ class TokenAcquirer(object):
     RE_TKK = re.compile(r'TKK=eval\(\'\(\(function\(\)\{(.+?)\}\)\(\)\)\'\);',
                         re.DOTALL)
 
-    def __init__(self, tkk='0', host='translate.google.com', user_agent=DEFAULT_USER_AGENT):
-        self.headers = {
-            'User-Agent': user_agent,
-        }
+    def __init__(self, session, tkk='0', host='translate.google.com'):
+        self.session = session
         self.tkk = tkk
         self.host = host if 'http' in host else 'https://' + host
 
@@ -56,10 +54,8 @@ class TokenAcquirer(object):
         if self.tkk and int(self.tkk.split('.')[0]) == now:
             return
 
-
-        async with aiohttp.ClientSession(headers=self.headers) as session:
-            async with session.get(self.host) as resp:
-                text = await resp.text()
+        async with self.session.get(self.host) as resp:
+            text = await resp.text()
 
         # this will be the same as python code after stripping out a reserved word 'var'
         code = str(self.RE_TKK.search(text).group(1)).replace('var ', '')

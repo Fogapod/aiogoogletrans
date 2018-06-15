@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 A Translation module.
 
@@ -17,7 +16,7 @@ from aiogoogletrans.models import Translated
 EXCLUDES = ('en', 'ca', 'fr')
 
 
-class Translator(object):
+class Translator:
     """Google Translate ajax API implementation class
 
     You have to create an instance of Translator to use this API
@@ -34,8 +33,10 @@ class Translator(object):
         self.headers = {
             'User-Agent': user_agent,
         }
+        self.session = aiohttp.ClientSession(headers=self.headers)
+
         self.service_urls = service_urls or ['translate.google.com']
-        self.token_acquirer = TokenAcquirer(host=self.service_urls[0])
+        self.token_acquirer = TokenAcquirer(self.session, host=self.service_urls[0])
 
     def _pick_service_url(self):
         if len(self.service_urls) == 1:
@@ -48,29 +49,28 @@ class Translator(object):
                                     token=token)
         url = urls.TRANSLATE.format(host=self._pick_service_url())
 
-        with aiohttp.ClientSession(headers=self.headers) as session:
-            async with session.get(url + '?' + params) as resp:
-                text = await resp.text()
+        async with self.session.get(url + '?' + params) as resp:
+            text = await resp.text()
 
         return utils.format_json(text)
 
-    async def translate(self, text, dest='en', src='auto'):
+    async def translate(self, text, dest=None, src=None):
         """Translate text from source language to destination language
 
         :param text: The source text(s) to be translated. Batch translation is supported via sequence input.
-        :type text: UTF-8 :class:`str`; :class:`unicode`; string sequence (list, tuple, iterator, generator)
+        :type text: UTF-8 :class:`str`; string sequence (list, tuple, iterator, generator)
 
         :param dest: The language to translate the source text into.
                      The value should be one of the language codes listed in :const:`googletrans.LANGUAGES`
                      or one of the language names listed in :const:`googletrans.LANGCODES`.
-        :param dest: :class:`str`; :class:`unicode`
+        :param dest: :class:`str`
 
         :param src: The language of the source text.
                     The value should be one of the language codes listed in :const:`googletrans.LANGUAGES`
                     or one of the language names listed in :const:`googletrans.LANGCODES`.
                     If a language is not specified,
                     the system will attempt to identify the source language automatically.
-        :param src: :class:`str`; :class:`unicode`
+        :param src: :class:`str`
 
         :rtype: Translated
         :rtype: :class:`list` (when a list is passed)
@@ -93,8 +93,16 @@ class Translator(object):
             jumps over  ->  이상 점프
             the lazy dog  ->  게으른 개
         """
-        dest = dest.lower().split('_', 1)[0]
-        src = src.lower().split('_', 1)[0]
+
+        if dest is None:
+            dest = 'en'
+        else:
+            dest = dest.lower().split('_', 1)[0]
+
+        if src is None:
+            src = 'auto'
+        else:
+            src = src.lower().split('_', 1)[0]
 
         if src != 'auto' and src not in LANGUAGES:
             if src in SPECIAL_CASES:
