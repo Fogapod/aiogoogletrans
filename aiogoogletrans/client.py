@@ -21,6 +21,9 @@ class Translator:
 
     You have to create an instance of Translator to use this API
 
+    :param session: session to use, new one is created if not passed
+    :type session: :class:`aiohttp.ClientSession`
+
     :param service_urls: google translate url list. URLs will be used randomly.
                          For example ``['translate.google.com', 'translate.google.co.kr']``
     :type service_urls: a sequence of strings
@@ -29,13 +32,20 @@ class Translator:
     :type user_agent: :class:`str`
     """
 
-    def __init__(self, service_urls=None, user_agent=DEFAULT_USER_AGENT):
+    def __init__(self, session=None, service_urls=None, user_agent=DEFAULT_USER_AGENT):
         self.headers = {
             'User-Agent': user_agent,
         }
-        self.session = aiohttp.ClientSession(headers=self.headers)
+        self.session = session
 
         self.service_urls = service_urls or ['translate.google.com']
+        if self.session is None:
+            self.token_acquirer = None
+        else:
+            self.token_acquirer = TokenAcquirer(self.session, host=self.service_urls[0])
+
+    async def _make_session(self):
+        self.session = aiohttp.ClientSession(headers=self.headers)
         self.token_acquirer = TokenAcquirer(self.session, host=self.service_urls[0])
 
     def _pick_service_url(self):
@@ -44,6 +54,9 @@ class Translator:
         return random.choice(self.service_urls)
 
     async def _translate(self, text, dest, src):
+        if self.session is None:
+            await self._make_session()
+
         token = await self.token_acquirer.do(text)
         params = utils.build_params(query=text, src=src, dest=dest,
                                     token=token)
@@ -155,3 +168,8 @@ class Translator:
         )
 
         return result
+
+    async def close(self):
+        """Perform cleanup"""
+        if self.session is not None:
+            await self.session.close()
