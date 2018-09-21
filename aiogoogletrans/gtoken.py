@@ -39,6 +39,7 @@ class TokenAcquirer:
 
     RE_TKK = re.compile(r'TKK=eval\(\'\(\(function\(\)\{(.+?)\}\)\(\)\)\'\);',
                         re.DOTALL)
+    RE_RAWTKK = re.compile(r'TKK=\'([^\']*)\';', re.DOTALL)
 
     def __init__(self, session, tkk='0', host='translate.google.com'):
         self.session = session
@@ -55,6 +56,11 @@ class TokenAcquirer:
 
         async with self.session.get(self.host) as resp:
             text = await resp.text()
+
+        raw_tkk = self.RE_RAWTKK.search(text)
+        if raw_tkk:
+            self.tkk = raw_tkk.group(1)
+            return
 
         # this will be the same as python code after stripping out a reserved word 'var'
         code = str(self.RE_TKK.search(text).group(1)).replace('var ', '')
