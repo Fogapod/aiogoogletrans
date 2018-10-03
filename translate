@@ -20,15 +20,15 @@ async def main():
 
     translator = Translator()
     try:
-        result = await translator.translate(args.text, dest=args.dest, src=args.src)
+        translated = await translator.translate(args.text, dest=args.dest, src=args.src)
     except ValueError:
         result = 'Invalid language given'
     else:
         result = f"""
-[{result.src}] {result.origin}
+[{translated.src}] {translated.origin}
     ->
-[{result.dest}] {result.text}
-[pron.] {result.pronunciation}
+[{translated.dest}] {translated.text}
+[pron.] {translated.pronunciation}
         """.strip()
     finally:
         await translator.close()

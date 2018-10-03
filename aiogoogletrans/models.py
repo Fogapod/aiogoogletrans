@@ -17,12 +17,7 @@ class Translated(object):
         self.pronunciation = pronunciation
 
     def __str__(self):  # pragma: nocover
-        return self.__unicode__()
-
-    def __unicode__(self):  # pragma: nocover
-        return u'Translated(src={src}, confidence={confidence}, dest={dest}, text={text}, pronunciation={pronunciation})'.format(
-            src=self.src, confidence=self.confidence, dest=self.dest,
-            text=self.text, pronunciation=self.pronunciation,
+        return (
+            f'Translated(src={self.src}, confidence={self.confidence}, dest={self.dest},'
+            f'text={self.text}, pronunciation={self.pronunciation})'
         )
-
-
