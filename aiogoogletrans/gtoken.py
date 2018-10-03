@@ -27,24 +27,16 @@ class TokenAcquirer:
 
     This operation will cause an additional request to get an initial
     token from translate.google.com.
-
-    Example usage:
-        >>> from googletrans.gtoken import TokenAcquirer
-        >>> acquirer = TokenAcquirer()
-        >>> text = 'test'
-        >>> tk = acquirer.do(text)
-        >>> tk
-        950629.577246
     """
 
     RE_TKK = re.compile(r'TKK=eval\(\'\(\(function\(\)\{(.+?)\}\)\(\)\)\'\);',
                         re.DOTALL)
     RE_RAWTKK = re.compile(r'TKK=\'([^\']*)\';', re.DOTALL)
 
-    def __init__(self, session, tkk='0', host='translate.google.com'):
-        self.session = session
+    def __init__(self, translator, tkk='0', host='translate.google.com'):
+        self.translator = translator
         self.tkk = tkk
-        self.host = host if 'http' in host else 'https://' + host
+        self.host = host if 'http' in host else f'https://{host}'
 
     async def _update(self):
         """update tkk
@@ -54,7 +46,7 @@ class TokenAcquirer:
         if self.tkk and int(self.tkk.split('.')[0]) == now:
             return
 
-        async with self.session.get(self.host) as resp:
+        async with self.translator.session.get(self.host, proxy=self.translator._pick_proxy()) as resp:
             text = await resp.text()
 
         raw_tkk = self.RE_RAWTKK.search(text)

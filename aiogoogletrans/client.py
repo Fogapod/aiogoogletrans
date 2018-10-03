@@ -30,13 +30,19 @@ class Translator:
 
     :param user_agent: the User-Agent header to send when making requests.
     :type user_agent: :class:`str`
+
+    :param proxies: list of proxy urls, random proxy is used for each request
+                    Notice: client won't send direct requests if at least 1 proxy is passed,
+                    include None in list to let client send direct requests
+    :type proxies: list: :class:`list`
     """
 
-    def __init__(self, session=None, service_urls=None, user_agent=DEFAULT_USER_AGENT):
+    def __init__(self, session=None, service_urls=None, user_agent=DEFAULT_USER_AGENT, proxies=None):
         self.headers = {
             'User-Agent': user_agent,
         }
         self.session = session
+        self.proxies = proxies or [None]
 
         self.service_urls = service_urls or ['translate.google.com']
         if self.session is None:
@@ -46,12 +52,17 @@ class Translator:
 
     async def _make_session(self):
         self.session = aiohttp.ClientSession(headers=self.headers)
-        self.token_acquirer = TokenAcquirer(self.session, host=self.service_urls[0])
+        self.token_acquirer = TokenAcquirer(self, host=self.service_urls[0])
 
     def _pick_service_url(self):
         if len(self.service_urls) == 1:
             return self.service_urls[0]
         return random.choice(self.service_urls)
+
+    def _pick_proxy(self):
+        if len(self.proxies) == 1:
+            return self.proxies[0]
+        return random.choice(self.proxies)
 
     async def _translate(self, text, dest, src):
         if self.session is None:
@@ -62,7 +73,7 @@ class Translator:
                                     token=token)
         url = urls.TRANSLATE.format(host=self._pick_service_url())
 
-        async with self.session.get(url + '?' + params) as resp:
+        async with self.session.get(f'{url}?{params}', proxy=self._pick_proxy()) as resp:
             text = await resp.text()
 
         return utils.format_json(text)
