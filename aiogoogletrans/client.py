@@ -64,7 +64,7 @@ class Translator:
             return self.proxies[0]
         return random.choice(self.proxies)
 
-    async def _translate(self, text, dest, src):
+    async def _translate(self, text, dest, src, proxy):
         if self.session is None:
             await self._make_session()
 
@@ -73,12 +73,12 @@ class Translator:
                                     token=token)
         url = urls.TRANSLATE.format(host=self._pick_service_url())
 
-        async with self.session.get(f'{url}?{params}', proxy=self._pick_proxy()) as resp:
+        async with self.session.get(f'{url}?{params}', proxy=proxy) as resp:
             text = await resp.text()
 
         return utils.format_json(text)
 
-    async def translate(self, text, dest=None, src=None):
+    async def translate(self, text, **kwargs):
         """Translate text from source language to destination language
 
         :param text: The source text(s) to be translated. Batch translation is supported via sequence input.
@@ -95,6 +95,9 @@ class Translator:
                     If a language is not specified,
                     the system will attempt to identify the source language automatically.
         :param src: :class:`str`
+
+        :param proxy: A proxy to use, can be None. If not provided, random session proxy is used.
+        :param proxy: class:`str`
 
         :rtype: Translated
         :rtype: :class:`list` (when a list is passed)
@@ -118,15 +121,24 @@ class Translator:
             the lazy dog  ->  게으른 개
         """
 
+        dest = kwargs.pop('dest', None)
         if dest is None:
             dest = 'en'
         else:
-            dest = dest.lower().split('_', 1)[0]
+            dest = dest.partition('_')[0].lower()
 
+        src = kwargs.pop('src', None)
         if src is None:
             src = 'auto'
         else:
-            src = src.lower().split('_', 1)[0]
+            src = src.partition('_')[0].lower()
+
+
+        proxy = kwargs.pop('proxy', self._pick_proxy())
+
+        if kwargs:
+            raise TypeError(
+                f"translate() got an unexpected keyword argument '{list(kwargs.keys())[0]}'")
 
         if src != 'auto' and src not in LANGUAGES:
             if src in SPECIAL_CASES:
@@ -147,12 +159,15 @@ class Translator:
         if isinstance(text, list):
             result = []
             for item in text:
-                translated = await self.translate(item, dest=dest, src=src)
+                # FIXME: in case proxy was randomly picked before, now it will
+                # be enforced for all requests
+                translated = await self.translate(
+                    item, dest=dest, src=src, proxy=proxy)
                 result.append(translated)
             return result
 
         origin = text
-        data = await self._translate(text, dest, src)
+        data = await self._translate(text, dest, src, proxy=proxy)
 
         # this code will be updated when the format is changed.
         translated = ''.join([d[0] if d[0] else '' for d in data[0]])
