@@ -8,9 +8,10 @@ import random
 import asyncio
 
 from aiogoogletrans import urls, utils
-from aiogoogletrans.gtoken import TokenAcquirer
 from aiogoogletrans.constants import DEFAULT_USER_AGENT, LANGCODES, LANGUAGES, SPECIAL_CASES
 from aiogoogletrans.models import Translated
+
+from gtts_token import gtts_token
 
 
 EXCLUDES = ('en', 'ca', 'fr')
@@ -35,9 +36,15 @@ class Translator:
                     Notice: client won't send direct requests if at least 1 proxy is passed,
                     include None in list to let client send direct requests
     :type proxies: list: :class:`list`
+
+    :type loop: asyncio event loop. If not passed, asyncio.get_event_loop() will be called
     """
 
-    def __init__(self, session=None, service_urls=None, user_agent=DEFAULT_USER_AGENT, proxies=None):
+    def __init__(
+            self, session=None, service_urls=None, user_agent=DEFAULT_USER_AGENT,
+            proxies=None, loop=asyncio.get_event_loop()
+        ):
+
         self.headers = {
             'User-Agent': user_agent,
         }
@@ -45,14 +52,13 @@ class Translator:
         self.proxies = proxies or [None]
 
         self.service_urls = service_urls or ['translate.google.com']
-        if self.session is None:
-            self.token_acquirer = None
-        else:
-            self.token_acquirer = TokenAcquirer(self.session, host=self.service_urls[0])
+
+        self.loop = loop
+
+        self.token = gtts_token.Token()
 
     async def _make_session(self):
         self.session = aiohttp.ClientSession(headers=self.headers)
-        self.token_acquirer = TokenAcquirer(self, host=self.service_urls[0])
 
     def _pick_service_url(self):
         if len(self.service_urls) == 1:
@@ -68,7 +74,9 @@ class Translator:
         if self.session is None:
             await self._make_session()
 
-        token = await self.token_acquirer.do(text)
+        token = await self.loop.run_in_executor(
+            None, self.token.calculate_token, text)
+
         params = utils.build_params(query=text, src=src, dest=dest,
                                     token=token)
         url = urls.TRANSLATE.format(host=self._pick_service_url())
